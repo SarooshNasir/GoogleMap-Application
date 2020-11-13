@@ -4,5 +4,6 @@ use_frameworks!
 
 target 'Feed Me' do
 pod 'GoogleMaps', '~> 3.7.0'
+pod 'BottomPopup'
 end
 

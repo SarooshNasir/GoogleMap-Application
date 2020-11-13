@@ -30,13 +30,23 @@ import UIKit
 import GoogleMaps
 
 class MapViewController: UIViewController {
-    let locationManager = CLLocationManager()
+  let reuseIdentifier = "cell"
+   var items = ["Restaurants", "Hospitals", "Shops", "Pharmacy" , "Shop" , "Coffee" , "Tea" , "Pharmacies"]
+  let locationManager = CLLocationManager()
+  let dataProvider = GoogleDataProvider()
+  let searchRadius: Double = 1000
 
+
+    @IBAction func refreshPlaces(_ sender: UIBarButtonItem) {
+        fetchPlaces(near: mapView.camera.target)
+        print("cool")
+    }
+    @IBOutlet weak var collectionview: UICollectionView!
     @IBOutlet weak var addressLabel: UILabel!
     @IBOutlet weak var mapView: GMSMapView!
     @IBOutlet private weak var mapCenterPinImage: UIImageView!
   @IBOutlet private weak var pinImageVerticalConstraint: NSLayoutConstraint!
-  var searchedTypes = ["bakery", "bar", "cafe", "grocery_or_supermarket", "restaurant"]
+    var searchedTypes = ["bakery", "bar", "cafe", "grocery_or_supermarket", "restaurant"]
   
   // MARK: -Street Address showing to label
   func reverseGeocode(coordinate: CLLocationCoordinate2D) {
@@ -73,6 +83,26 @@ class MapViewController: UIViewController {
 
     }
   }
+  
+ //  MARK: Restaurant places through API
+  func fetchPlaces(near coordinate: CLLocationCoordinate2D){
+    // 1
+    mapView.clear()
+    // 2
+    dataProvider.fetchPlaces(
+      near: coordinate,
+      radius:searchRadius,
+      types: searchedTypes
+    ) { places in
+      places.forEach { place in
+        // 3
+        let marker = PlaceMarker(place: place, availableTypes: self.searchedTypes)
+        // 4
+        marker.map = self.mapView
+      }
+    }
+  }
+
 
 }
 
@@ -80,6 +110,11 @@ class MapViewController: UIViewController {
 extension MapViewController {
  override func viewDidLoad() {
     super.viewDidLoad()
+    self.collectionview.delegate = self
+    self.collectionview.dataSource = self
+  self.collectionview.backgroundView = nil
+  self.collectionview.backgroundColor = .clear
+
   mapView.delegate = self
 
     // 1
@@ -117,6 +152,8 @@ extension MapViewController: TypesTableViewControllerDelegate {
   func typesController(_ controller: TypesTableViewController, didSelectTypes types: [String]) {
     searchedTypes = controller.selectedTypes.sorted()
     dismiss(animated: true)
+    fetchPlaces(near: mapView.camera.target)
+
   }
 }
 // MARK: - CLLocationManagerDelegate
@@ -153,6 +190,8 @@ extension MapViewController: CLLocationManagerDelegate {
       zoom: 15,
       bearing: 0,
       viewingAngle: 0)
+    fetchPlaces(near: location.coordinate)
+
   }
 
   // 8
@@ -171,8 +210,69 @@ extension MapViewController: GMSMapViewDelegate {
   }
   func mapView(_ mapView: GMSMapView, willMove gesture: Bool) {
     addressLabel.lock()
+    if gesture {
+      mapCenterPinImage.fadeIn(0.25)
+      mapView.selectedMarker = nil
+    }
+
+  }
+  func mapView(
+    _ mapView: GMSMapView,
+    markerInfoContents marker: GMSMarker
+  ) -> UIView? {
+    // 1
+    guard let placeMarker = marker as? PlaceMarker else {
+      return nil
+    }
+
+    // 2
+    guard let infoView = UIView.viewFromNibName("MarkerInfoView") as? MarkerInfoView
+      else {
+        return nil
+    }
+
+    // 3
+    infoView.nameLabel.text = placeMarker.place.name
+    infoView.addressLabel.text = placeMarker.place.address
+
+    return infoView
+  }
+  func mapView(_ mapView: GMSMapView, didTap marker: GMSMarker) -> Bool {
+    mapCenterPinImage.fadeOut(0.25)
+    return false
+  }
+  func didTapMyLocationButton(for mapView: GMSMapView) -> Bool {
+    mapCenterPinImage.fadeIn(0.25)
+    mapView.selectedMarker = nil
+    return false
   }
 
 
+
+}
+extension MapViewController: UICollectionViewDataSource,UICollectionViewDelegate{
+  func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+      return self.items.count
+  }
+  func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+       
+       // get a reference to our storyboard cell
+       let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath as IndexPath) as! MyCollectionViewCell
+       
+       // Use the outlet in our custom class to get a reference to the UILabel in the cell
+       cell.myLabel.text = self.items[indexPath.row]
+       cell.myLabel.adjustsFontSizeToFitWidth = true// The row value is the same as the index of the desired text within the array.
+    cell.backgroundColor = .white// make cell more visible in our example project
+    cell.layer.borderColor = UIColor.gray.cgColor
+    cell.layer.borderWidth = 1
+    cell.layer.cornerRadius = 20
+ 
+       return cell
+   }
+  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    fetchPlaces(near: mapView.camera.target)
+  }
+  
+  
 }
 

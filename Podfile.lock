@@ -1,4 +1,5 @@
 PODS:
+  - BottomPopup (0.6.0)
   - GoogleMaps (3.7.0):
     - GoogleMaps/Maps (= 3.7.0)
   - GoogleMaps/Base (3.7.0)
@@ -6,15 +7,18 @@ PODS:
     - GoogleMaps/Base
 
 DEPENDENCIES:
+  - BottomPopup
   - GoogleMaps (~> 3.7.0)
 
 SPEC REPOS:
   trunk:
+    - BottomPopup
     - GoogleMaps
 
 SPEC CHECKSUMS:
+  BottomPopup: 1d5649a3b29396238f0e8f3c82075a7bfcf37ba7
   GoogleMaps: 55da829c68aa931f3ae982b9e341cc2f3d89c587
 
-PODFILE CHECKSUM: e7df360dac665bb30c90cecd907e00b1d0a03161
+PODFILE CHECKSUM: 04d8d3ddabd3566522c55bde893c412c63438a06
 
 COCOAPODS: 1.10.0
